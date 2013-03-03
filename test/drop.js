@@ -16,6 +16,7 @@ describe('drop', function() {
         })
 
         it('can connect to the default server', function(done) {
+            this.timeout(10e3)
             var r = new Drop({}, function() {
                 r.socket.terminate()
                 done()
@@ -32,7 +33,7 @@ describe('drop', function() {
         })
 
         it('sends immediately when connected', function(done) {
-            this.timeout(5e3)
+            this.timeout(10e3)
             var r = new Drop(function() {
                 r.send({})
                 expect(r.queue.length).to.be(0)
@@ -43,14 +44,14 @@ describe('drop', function() {
         })
 
         it('resolves the promise', function(done) {
-            this.timeout(5e3)
+            this.timeout(10e3)
             var r = new Drop()
             r.send({ command: 'ping' })
             .fin(done)
         })
 
         it('rejects on error', function(done) {
-            this.timeout(5e3)
+            this.timeout(10e3)
             var r = new Drop()
             r.send({ command: 'doesnotexist' })
             .fail(function(err) {
@@ -62,6 +63,7 @@ describe('drop', function() {
 
     describe('subscribe', function() {
         it('defaults to server', function() {
+            this.timeout(10e3)
             var r = new Drop()
             r.subscribe(function() { })
             expect(r.queue[0].message.streams).to.eql(['server'])
@@ -69,7 +71,7 @@ describe('drop', function() {
         })
 
         it('eventually receives a ledgerClosed when subing to ledger', function(done) {
-            this.timeout(60e3)
+            this.timeout(120e3)
 
             var r = new Drop()
 

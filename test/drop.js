@@ -226,5 +226,20 @@ describe('drop', function() {
             })
             .done()
         })
+
+        it('accepts offer 1 XRP to 1 BTC/stamp', function(done) {
+            this.timeout(10e3)
+            var r = new Drop(defaults)
+            r.createOffer(
+                dropAddr,
+                '1 XRP',
+                '1 BTC/rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B'
+            )
+            .then(function(result) {
+                expect(result.tx_json.hash).to.be.a('string')
+                done()
+            })
+            .done()
+        })
     })
 })

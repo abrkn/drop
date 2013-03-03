@@ -10,7 +10,8 @@
     "dependencies": {
         "ws": "x",
         "debug": "x",
-        "q": "x"
+        "q": "x",
+        "extend": "x"
     },
     "devDependencies": {
         "mocha": "x",

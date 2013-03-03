@@ -242,4 +242,18 @@ describe('drop', function() {
             .done()
         })
     })
+
+    describe('ledger', function() {
+        it('can get ledger from index', function(done) {
+            this.timeout(300e3)
+            var r = new Drop(defaults)
+            r.ledger(100, true)
+            .then(function(ledger) {
+                expect(ledger.accountHash).to.be('D72A0EBEFE211CC8A16227F58663BA4E9D36910CDA8471F2411455F00955D5F7')
+                done()
+            })
+            .fail(done)
+            .done()
+        })
+    })
 })

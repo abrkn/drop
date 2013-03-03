@@ -134,4 +134,46 @@ describe('drop', function() {
             .fail(done)
         })
     })
+
+    describe('accountLines', function() {
+        it('can fetch lines for andy', function(done) {
+            this.timeout(10e3)
+            var r = new Drop()
+            r.accountLines('rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi')
+            .then(function(result) {
+                expect(result).to.be.an('array')
+                r.socket.terminate()
+                done()
+            })
+            .fail(done)
+        })
+    })
+
+    describe('accountTransactions', function() {
+        it('can fetch andys transactions', function(done) {
+            this.timeout(10e3)
+            var r = new Drop()
+            r.accountTransactions('rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi', 0, 403707)
+            .then(function(result) {
+                expect(result).to.be.an('array')
+                r.socket.terminate()
+                done()
+            })
+            .fail(done)
+        })
+    })
+
+    describe('transaction', function() {
+        it('can fetch a known tx', function(done) {
+            this.timeout(10e3)
+            var r = new Drop()
+            r.transaction('2E5D2E21E9D40DEAA2BD1C322A43974A32289A94E01A4B1F5BABFF98A78E5914')
+            .then(function(tx) {
+                expect(tx.Account).to.be('ra2Mv6bbtoBtQt1AqPd232MN7Yf4zo1QCX')
+                r.socket.terminate()
+                done()
+            })
+            .fail(done)
+        })
+    })
 })

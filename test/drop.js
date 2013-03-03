@@ -116,5 +116,22 @@ describe('drop', function() {
                 done()
             })
         })
+
+        it('can send xrp to andy', function(done) {
+            this.timeout(10e3)
+
+            var r = new Drop()
+            r.payment(
+                'ssd5TpRAshGAF2Mg9GxZNSpKXaDr8',
+                'ra2Mv6bbtoBtQt1AqPd232MN7Yf4zo1QCX',
+                'rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi',
+                1)
+            .then(function(result) {
+                expect(result.tx_json.hash).to.be.a('string')
+                r.socket.terminate()
+                done()
+            })
+            .fail(done)
+        })
     })
 })

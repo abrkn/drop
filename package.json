@@ -1,0 +1,25 @@
+{
+    "name": "drop",
+    "version": "0.0.1",
+    "description": "node.js ripple client",
+    "author": "Andreas Brekken <a@abrkn.com>",
+    "main": "lib/drop.js",
+    "scripts": {
+        "test": "jake test"
+    },
+    "dependencies": {
+        "ws": "x",
+        "debug": "x",
+        "q": "x"
+    },
+    "devDependencies": {
+        "mocha": "x",
+        "expect.js": "x",
+        "jake": "x",
+        "shelljs": "x"
+    },
+    "engines": {
+        "node": "0.8.x",
+        "npm": "1.1.x"
+    }
+}

@@ -100,4 +100,21 @@ describe('drop', function() {
             .fail(done)
         })
     })
+
+    describe('payment', function() {
+        it('fails when attempting to send to self', function(done) {
+            this.timeout(10e3)
+
+            var r = new Drop()
+            r.payment(
+                'ssd5TpRAshGAF2Mg9GxZNSpKXaDr8',
+                'ra2Mv6bbtoBtQt1AqPd232MN7Yf4zo1QCX',
+                'ra2Mv6bbtoBtQt1AqPd232MN7Yf4zo1QCX',
+                1e8)
+            .fail(function(err) {
+                expect(err.message).to.match(/to self/)
+                done()
+            })
+        })
+    })
 })

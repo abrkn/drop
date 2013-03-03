@@ -8,16 +8,17 @@
         "test": "jake test"
     },
     "dependencies": {
-        "ws": "x",
-        "debug": "x",
-        "q": "x",
-        "extend": "x"
+        "ws": "0.4.25",
+        "debug": "0.7.2",
+        "q": "0.9.0",
+        "extend": "1.1.3",
+        "underscore": "1.4.4"
     },
     "devDependencies": {
-        "mocha": "x",
-        "expect.js": "x",
-        "jake": "x",
-        "shelljs": "x"
+        "mocha": "1.8.1",
+        "expect.js": "0.2.0",
+        "jake": "0.5.8",
+        "shelljs": "0.1.2"
     },
     "engines": {
         "node": "0.8.x",

@@ -83,4 +83,19 @@ describe('drop', function() {
             }).done()
         })
     })
+
+    describe('account', function() {
+        it('can fetch andys account details', function(done) {
+            this.timeout(10e3)
+
+            var r = new Drop()
+            r.account('rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi')
+            .then(function(result) {
+                expect(result.account_data.Account).to.be('rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi')
+                r.socket.terminate()
+                done()
+            })
+            .fail(done)
+        })
+    })
 })

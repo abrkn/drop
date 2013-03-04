@@ -256,18 +256,6 @@ describe('drop', function() {
             .fail(done)
             .done()
         })
-
-        it('ledger-test', function(done) {
-            this.timeout(300e3)
-            var r = new Drop(defaults)
-            r.ledger(304077 - 10, true)
-            .then(function(ledger) {
-                require('fs').writeFileSync('c:/temp/ledger.json', JSON.stringify(ledger, null, 100), 'utf8')
-                done()
-            })
-            .fail(done)
-            .done()
-        })
     })
 
     describe('cancelOffer', function() {

@@ -279,18 +279,40 @@ describe('drop', function() {
                 '1 XRP',
                 '1 BTC/rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B'
             )
-            .then(function(order) {
-                return Q.delay(1e3)
-                .then(function() {
-                    r.cancelOffer(order.Account, order.Sequence)
-                    .then(function(result) {
-                        expect(result.OfferSequence).to.be(order.Sequence)
-                        r.socket.terminate()
-                        done()
-                    })
+            .then(function(offer) {
+                return r.cancelOffer(offer.Account, offer.Sequence)
+                .then(function(result) {
+                    expect(result.OfferSequence).to.be(offer.Sequence)
+                    r.socket.terminate()
+                    done()
                 })
             })
             .fail(done)
+        })
+    })
+
+    describe('accountOffers', function() {
+        it('can see a newly placed offer', function(done) {
+            this.timeout(30e3)
+            var r = new Drop(defaults)
+            r.createOffer(
+                dropAddr,
+                '1 XRP',
+                '1 BTC/rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B'
+            )
+            .then(function(offer) {
+                return r.accountOffers(offer.Account)
+                .then(function(offers) {
+                    var found = offers.some(function(o) {
+                        return o.seq === offer.Sequence
+                    })
+
+                    expect(found).to.be.ok()
+                    r.socket.terminate()
+                    done()
+                })
+            })
+            .done()
         })
     })
 })

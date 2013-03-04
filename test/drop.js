@@ -157,7 +157,7 @@ describe('drop', function() {
 
     describe('accountTransactions', function() {
         it('can fetch andys transactions', function(done) {
-            this.timeout(10e3)
+            this.timeout(60e3)
             var r = new Drop(defaults)
             r.accountTransactions(dropAddr, 0, 403707)
             .then(function(result) {

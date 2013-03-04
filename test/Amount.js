@@ -46,4 +46,16 @@ describe('Amount', function() {
             expect(actual.issuer).to.be('rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi')
         })
     })
+
+    it('supports example 1', function() {
+        var a = new Amount('1 BTC/rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B')
+        expect(a.value).to.be('1')
+        expect(a.currency).to.be('BTC')
+        expect(a.issuer).to.be('rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B')
+
+        var j = JSON.parse(JSON.stringify(a))
+        expect(j.value).to.be('1')
+        expect(j.currency).to.be('BTC')
+        expect(j.issuer).to.be('rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B')
+    })
 })

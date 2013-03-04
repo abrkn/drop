@@ -1,4 +1,5 @@
 var Drop = require('../lib/drop')
+, Q = require('q')
 , expect = require('expect.js')
 , andyAddr = 'rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi'
 , dropAddr = 'ra2Mv6bbtoBtQt1AqPd232MN7Yf4zo1QCX'
@@ -132,7 +133,7 @@ describe('drop', function() {
                 andyAddr,
                 1)
             .then(function(result) {
-                expect(result.tx_json.hash).to.be.a('string')
+                expect(result.hash).to.be.a('string')
                 r.socket.terminate()
                 done()
             })
@@ -236,7 +237,7 @@ describe('drop', function() {
                 '1 BTC/rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B'
             )
             .then(function(result) {
-                expect(result.tx_json.hash).to.be.a('string')
+                expect(result.hash).to.be.a('string')
                 done()
             })
             .done()
@@ -254,6 +255,42 @@ describe('drop', function() {
             })
             .fail(done)
             .done()
+        })
+
+        it('ledger-test', function(done) {
+            this.timeout(300e3)
+            var r = new Drop(defaults)
+            r.ledger(304077 - 10, true)
+            .then(function(ledger) {
+                require('fs').writeFileSync('c:/temp/ledger.json', JSON.stringify(ledger, null, 100), 'utf8')
+                done()
+            })
+            .fail(done)
+            .done()
+        })
+    })
+
+    describe('cancelOffer', function() {
+        it('can cancel a newly placed offer', function(done) {
+            this.timeout(60e3)
+            var r = new Drop(defaults)
+            r.createOffer(
+                dropAddr,
+                '1 XRP',
+                '1 BTC/rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B'
+            )
+            .then(function(order) {
+                return Q.delay(1e3)
+                .then(function() {
+                    r.cancelOffer(order.Account, order.Sequence)
+                    .then(function(result) {
+                        expect(result.OfferSequence).to.be(order.Sequence)
+                        r.socket.terminate()
+                        done()
+                    })
+                })
+            })
+            .fail(done)
         })
     })
 })

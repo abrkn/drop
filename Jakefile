@@ -1,5 +1,5 @@
 require('shelljs/global')
 
 task('test', function() {
-    jake.exec('mocha', {printStdout: true, printStderr: true })
+    jake.exec('mocha -b -R list', {printStdout: true, printStderr: true })
 })

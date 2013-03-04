@@ -1,18 +1,22 @@
 {
     "name": "drop",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "node.js ripple client",
     "author": "Andreas Brekken <a@abrkn.com>",
     "main": "lib/drop.js",
     "scripts": {
         "test": "jake test"
     },
+    "bin": {
+        "drop-order": "./bin/order"
+    },
     "dependencies": {
         "ws": "0.4.25",
         "debug": "0.7.2",
         "q": "0.9.0",
         "extend": "1.1.3",
-        "underscore": "1.4.4"
+        "underscore": "1.4.4",
+        "optimist": "x"
     },
     "devDependencies": {
         "mocha": "1.8.1",

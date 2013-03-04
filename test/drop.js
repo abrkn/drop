@@ -315,4 +315,24 @@ describe('drop', function() {
             .done()
         })
     })
+
+    // cancel all offers. this costs XRP but saves the fund req
+    after(function(done) {
+        this.timeout(60e3)
+        console.log('cancelling all offers')
+        var r = new Drop(defaults)
+        r.accountOffers(dropAddr)
+        .then(function(offers) {
+            return Q.all(offers.map(function(o) {
+                console.log('cancelling %j', o)
+                return r.cancelOffer(dropAddr, o.seq)
+            }))
+        })
+        .then(function() {
+            console.log('done')
+            r.socket.terminate()
+            done()
+        })
+        .fail(done)
+    })
 })

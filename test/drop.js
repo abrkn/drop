@@ -1,6 +1,7 @@
 var Drop = require('../lib/drop')
 , Q = require('q')
 , expect = require('expect.js')
+, util = require('util')
 , andyAddr = 'rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi'
 , dropAddr = 'ra2Mv6bbtoBtQt1AqPd232MN7Yf4zo1QCX'
 , defaults = {
@@ -70,27 +71,54 @@ describe('drop', function() {
     })
 
     describe('subscribe', function() {
-        it('defaults to server', function() {
-            this.timeout(10e3)
-            var r = new Drop(defaults)
-            r.subscribe(function() { })
-            expect(r.queue[0].message.streams).to.eql(['server'])
-            r.socket.terminate()
-        })
-
         it('eventually receives a ledgerClosed when subing to ledger', function(done) {
             this.timeout(120e3)
 
             var r = new Drop(defaults)
 
             // the .done will cause any exception to be thrown
-            r.subscribe('ledger', function(type, result) {
+            r.subscribe({ ledger: function(message) {
                 // ledger info received
-                expect(type).to.be('ledgerClosed')
-                expect(result).to.be.ok()
+                expect(message.type).to.be('ledgerClosed')
                 r.socket.terminate()
                 done()
-            }).done()
+            }}).done()
+        })
+
+        it('can subscribe to accounts', function(done) {
+            // because there's so little activity at this point, we'll
+            // just make a transaction ourselves
+            this.timeout(120e3)
+
+            var r = new Drop(defaults)
+
+            var subs = {
+                accounts: {}
+            }
+            , verified = [false, false]
+
+            subs.accounts[dropAddr] = function(message) {
+                if (verified[0]) return
+                expect(message.transaction.Account).to.be(dropAddr)
+                verified[0] = true
+                verified[1] && done()
+            }
+
+            subs.accounts[andyAddr] = function(message) {
+                if (verified[1]) return
+                verified[1] = true
+                verified[0] && done()
+            }
+
+            // the .done will cause any exception to be thrown
+            r.subscribe(subs)
+            .then(function() {
+                return r.payment(dropAddr, andyAddr, 1)
+                .then(function(result) {
+                    expect(result.hash).to.be.a('string')
+                })
+            })
+            .done()
         })
     })
 

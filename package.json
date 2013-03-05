@@ -1,6 +1,6 @@
 {
     "name": "drop",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "description": "node.js ripple client",
     "author": "Andreas Brekken <a@abrkn.com>",
     "main": "lib/drop.js",
@@ -8,7 +8,8 @@
         "test": "jake test"
     },
     "bin": {
-        "drop-order": "./bin/order"
+        "drop-order": "./bin/order",
+        "drop-pay": "./bin/pay"
     },
     "dependencies": {
         "ws": "0.4.25",

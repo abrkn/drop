@@ -195,6 +195,18 @@ describe('drop', function() {
             })
             .fail(done)
         })
+
+        it('can complete a request i have problems with', function(done) {
+            // rnipVEZ2hi6qh7BedivFR13rXHYdpzhKfc on index 313311
+            this.timeout(10e3)
+            var r= new Drop(defaults)
+            r.accountTransactions('rnipVEZ2hi6qh7BedivFR13rXHYdpzhKfc', 313311)
+            .then(function(result) {
+                expect(result).to.be.an('array')
+                done()
+            })
+            .done()
+        })
     })
 
     describe('transaction', function() {

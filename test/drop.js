@@ -95,19 +95,21 @@ describe('drop', function() {
             var subs = {
                 accounts: {}
             }
-            , verified = [false, false]
+            , andyDone
+            , dropDone
 
             subs.accounts[dropAddr] = function(message) {
-                if (verified[0]) return
-                expect(message.transaction.Account).to.be(dropAddr)
-                verified[0] = true
-                verified[1] && done()
+                if (dropDone) return
+                if (message.transaction.Account != dropAddr) return
+                dropDone = true
+                andyDone && done()
             }
 
             subs.accounts[andyAddr] = function(message) {
-                if (verified[1]) return
-                verified[1] = true
-                verified[0] && done()
+                if (andyDone) return
+                if (message.transaction.Destination != andyAddr) return
+                andyDone = true
+                dropDone && done()
             }
 
             // the .done will cause any exception to be thrown

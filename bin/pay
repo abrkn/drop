@@ -10,5 +10,6 @@ drop.opts.secrets[argv.account] = argv.secret
 drop.payment(argv.account, argv.to, argv.amount)
 .then(function(res) {
     console.log(res)
+    drop.socket.terminate()
 })
 .done()

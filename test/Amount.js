@@ -52,6 +52,12 @@ describe('Amount', function() {
             expect(actual.currency).to.be('USD')
             expect(actual.issuer).to.be('rG4muW7MgLqFV1VgzJ7sJ6ADr3xAAPujVi')
         })
+
+        it('writes XRP as drops, not JSON', function() {
+            var a = new Amount(100, 'XRP', null)
+            , actual = a.toJSON()
+            expect(actual).to.be('' + 100e6)
+        })
     })
 
     it('supports example 1', function() {

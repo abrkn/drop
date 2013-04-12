@@ -25,7 +25,7 @@ describe('drop', function() {
         })
 
         it('can connect to the default server', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop({}, function() {
                 r.socket.terminate()
                 done()
@@ -42,7 +42,7 @@ describe('drop', function() {
         })
 
         it('sends immediately when connected', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(function() {
                 r.send({})
                 expect(r.queue.length).to.be(0)
@@ -53,14 +53,14 @@ describe('drop', function() {
         })
 
         it('resolves the promise', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(defaults)
             r.send({ command: 'ping' })
             .fin(done)
         })
 
         it('rejects on error', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(defaults)
             r.send({ command: 'doesnotexist' })
             .fail(function(err) {
@@ -126,7 +126,7 @@ describe('drop', function() {
 
     describe('account', function() {
         it('can fetch andys account details', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
 
             var r = new Drop(defaults)
             r.account(dropAddr)
@@ -141,7 +141,7 @@ describe('drop', function() {
 
     describe('payment', function() {
         it('fails when attempting to send to self', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
 
             var r = new Drop(defaults)
             r.payment(
@@ -155,7 +155,7 @@ describe('drop', function() {
         })
 
         it('can send xrp to andy', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
 
             var r = new Drop(defaults)
             r.payment(
@@ -173,7 +173,7 @@ describe('drop', function() {
 
     describe('accountLines', function() {
         it('can fetch lines for andy', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(defaults)
             r.accountLines(dropAddr)
             .then(function(result) {
@@ -200,7 +200,7 @@ describe('drop', function() {
 
         it('can complete a request i have problems with', function(done) {
             // rnipVEZ2hi6qh7BedivFR13rXHYdpzhKfc on index 313311
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r= new Drop(defaults)
             r.accountTransactions('rnipVEZ2hi6qh7BedivFR13rXHYdpzhKfc', 313311)
             .then(function(result) {
@@ -213,7 +213,7 @@ describe('drop', function() {
 
     describe('transaction', function() {
         it('can fetch a known tx', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(defaults)
             r.transaction('2E5D2E21E9D40DEAA2BD1C322A43974A32289A94E01A4B1F5BABFF98A78E5914')
             .then(function(tx) {
@@ -229,7 +229,7 @@ describe('drop', function() {
     /*
     describe('subscribeBook', function() {
         it('can fetch xrp/btc book', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(defaults)
             r.subscribeBook('XRP', 'BTC', null, dropAddr, function(result) {
                 console.log(result)
@@ -241,12 +241,12 @@ describe('drop', function() {
 
     describe('createOffer', function() {
         it('fails when trying BTC/stamp to XRP because unfunded', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(defaults)
             r.createOffer(
                 dropAddr,
-                '1 BTC/rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B',
-                '10000000000000 XRP'
+                { value: '1', currency: 'BTC', issuer: 'rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B' },
+                { value: '100000000000', currency: 'XRP' }
             )
             .fail(function(err) {
                 expect(err.message).to.match(/balance to fund/)
@@ -256,7 +256,7 @@ describe('drop', function() {
         })
 
         it('is upset when trying 1 XRP for 2 XRP', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(defaults)
             r.createOffer(
                 dropAddr,
@@ -271,7 +271,7 @@ describe('drop', function() {
         })
 
         it('accepts offer 1 XRP to 1 BTC/stamp', function(done) {
-            this.timeout(10e3)
+            this.timeout(30e3)
             var r = new Drop(defaults)
             r.createOffer(
                 dropAddr,
@@ -292,7 +292,7 @@ describe('drop', function() {
             var r = new Drop(defaults)
             r.ledger(100, true)
             .then(function(ledger) {
-                expect(ledger.accountHash).to.be('D72A0EBEFE211CC8A16227F58663BA4E9D36910CDA8471F2411455F00955D5F7')
+                expect(ledger.account_hash).to.be('D72A0EBEFE211CC8A16227F58663BA4E9D36910CDA8471F2411455F00955D5F7')
                 done()
             })
             .fail(done)

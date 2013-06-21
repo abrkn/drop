@@ -1,32 +1,29 @@
 {
-    "name": "drop",
-    "version": "0.1.0",
-    "description": "node.js ripple client",
-    "author": "Andreas Brekken <a@abrkn.com>",
-    "main": "lib/drop.js",
-    "scripts": {
-        "test": "jake test"
-    },
-    "bin": {
-        "drop-order": "./bin/order",
-        "drop-pay": "./bin/pay"
-    },
-    "dependencies": {
-        "ws": "0.4.25",
-        "debug": "0.7.2",
-        "q": "0.9.0",
-        "extend": "1.1.3",
-        "underscore": "1.4.4",
-        "optimist": "x"
-    },
-    "devDependencies": {
-        "mocha": "1.8.1",
-        "expect.js": "0.2.0",
-        "jake": "0.5.8",
-        "shelljs": "0.1.2"
-    },
-    "engines": {
-        "node": "0.8.x",
-        "npm": ">=1.1.0"
-    }
+  "name": "drop",
+  "version": "0.2.0",
+  "description": "node.js ripple client",
+  "author": "Andreas Brekken <a@abrkn.com>",
+  "scripts": {
+    "test": "mocha"
+  },
+  "bin": {
+    "drop": "./bin/drop"
+  },
+  "dependencies": {
+    "extend": "~1.1.3",
+    "debug": "~0.7.2",
+    "lodash": "~1.3.1",
+    "num": "~0.2.1",
+    "optimist": "~0.5.2",
+    "konfu": "~1.1.4",
+    "ws": "~0.4.25"
+  },
+  "devDependencies": {
+    "mocha": "~1.11.0",
+    "expect.js": "~0.2.0"
+  },
+  "engines": {
+    "node": "0.8.x",
+    "npm": ">=1.1.0"
+  }
 }

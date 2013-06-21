@@ -4,12 +4,14 @@ var _ = require('underscore')
 , assert = require('assert')
 , util = require('util')
 , EventEmitter = require('events').EventEmitter
-, Q = require('q')
+, convert = require('./convert')
 
 // construct with string to set uri only
 // or { uri: 'wss://s1.ripple.com' }
 // optional callback
 var Drop = module.exports = function(opts, cb) {
+    _.bindAll(this)
+
     if (_.isFunction(opts)) {
         cb = opts
         opts = null
@@ -31,45 +33,58 @@ var Drop = module.exports = function(opts, cb) {
 
     debug('connecting to %s', this.opts.uri)
     this.socket = new WebSocket(this.opts.uri, cb)
-    this.socket.on('open', this.onOpen.bind(this))
-    this.socket.on('message', this.onMessage.bind(this))
-    this.socket.on('close', this.onClose.bind(this))
-    this.socket.on('error', this.onError.bind(this))
+    this.socket.on('open', this.onOpen)
+    this.socket.on('message', this.onMessage)
+    this.socket.on('close', this.onClose)
+    this.socket.on('error', this.onError)
     cb && this.socket.once('open', cb)
 }
 
 util.inherits(Drop, EventEmitter)
 
+Drop.prototype.close = function() {
+    this.socket.close()
+    this.socket = null
+}
+
 Drop.prototype.onOpen = function() {
+    var that = this
+
     debug('socket open')
 
+    this.emit('open')
+
+    debug('sending %s queued message(s)', this.queue.length)
+
     this.queue.forEach(function(item) {
-        this.send(item.message, item.deferred)
-    }, this)
+        that.send(item.message, item.callback)
+    })
 }
 
 Drop.prototype.onClose = function() {
     debug('socket closed')
+    this.emit('closed')
 }
 
 // TODO: function is too long
-Drop.prototype.onMessage = function(data, flags) {
+Drop.prototype.onMessage = function(data) {
     var message = JSON.parse(data)
-    , deferred = this.sent[message.id]
+    , cb = this.sent[message.id]
     this.sent[message.id] = null
 
-    debug('socket message %s', util.inspect(message, null, 100))
+    debug('socket message %s',
+        censor(util.inspect(message, null, 100)))
 
     if (message.type == 'response') {
         if (message.status == 'error') {
-            var error = new Error(message.error_message)
-            error.code = message.error_code
-            error.name = message.error
-            return deferred.reject(error)
+            var err = new Error(message.error_message)
+            err.code = message.error_code
+            err.name = message.error
+            return cb(err)
         }
 
         if (message.status == 'success') {
-            return deferred.resolve(message.result)
+            return cb(null, message.result)
         }
 
         throw new Error('not implemented status ' + message.status)
@@ -88,9 +103,12 @@ Drop.prototype.onMessage = function(data, flags) {
     if (~['transaction'].indexOf(message.type)) {
         _.each(this.subs.accounts, function(cb, addr) {
             if (message.transaction.Account == addr ||
-                message.transaction.Destination == addr) {
+                message.transaction.Destination == addr
+            ) {
                 subs.push(cb)
             }
+
+            message = convert.fromTheirTransaction(message.transaction)
         })
     }
 
@@ -105,34 +123,35 @@ Drop.prototype.onMessage = function(data, flags) {
 
 Drop.prototype.onError = function(err) {
     console.error('socket error %j', err)
+    this.emit('error', err)
 }
 
-Drop.prototype.send = function(message, deferred) {
-    deferred || (deferred = Q.defer())
-
+// returns true if message was sent, false is queued
+Drop.prototype.send = function(message, cb) {
     if (this.socket.readyState != WebSocket.OPEN) {
         debug('queueing message')
-        this.queue.push({ message: message, deferred: deferred })
-        return deferred.promise
+        this.queue.push({ message: message, callback: cb })
+        return false
     }
 
-    this.sent[message.id = this.sent.length] = deferred
+    this.sent[message.id = this.sent.length] = cb
 
-    var censored = util.inspect(message, null, 10).replace(/secret\: [^\s]+/g, 'secret: *** SECRET ***')
+    var censored = censor(util.inspect(message, null, 10))
     debug('sending %s', censored)
 
     this.socket.send(JSON.stringify(message))
 
-    return deferred.promise
+    return true
 }
 
-Drop.prototype.ping = function(streams) {
-    var now = +new Date()
+function censor(s) {
+    return s.replace(/secret\: ['"]?[A-Za-z0-9]+["']?/g, 'secret: *** SECRET ***')
+}
 
-    return this.send({
-        command: 'ping'
-    }).then(function(response) {
-        return +new Date() - now
+Drop.prototype.ping = function(cb) {
+    var now = +new Date()
+    this.send({ command: 'ping' }, function(err) {
+        cb(err, err ? null : new Date() - now)
     })
 }
 
@@ -143,17 +162,31 @@ Drop.prototype.ping = function(streams) {
 //   transactions: cb
 // }
 // ledgerIndex optional
-Drop.prototype.subscribe = function(subs, ledgerIndex) {
+// or subscribe(address, messageCb, cb)
+Drop.prototype.subscribe = function(subs, ledgerIndex, cb) {
     var that = this
-    var request = {
+    , request = {
         command: 'subscribe'
     }
 
-    if (!_.isUndefined(ledgerIndex)) {
+    if (cb === undefined) {
+        cb = ledgerIndex
+    } else {
         request.ledger_index = ledgerIndex
     }
 
-    ['server', 'ledger', 'transactions'].forEach(function(name) {
+    if (typeof subs == 'string') {
+        var accounts = {}
+        accounts[subs] = ledgerIndex
+
+        subs = {
+            accounts: accounts
+        }
+    }
+
+    var types = ['server', 'ledger', 'transactions']
+
+    types.forEach(function(name) {
         if (subs[name]) {
             (request.streams || (request.streams = [])).push(name)
         }
@@ -166,9 +199,12 @@ Drop.prototype.subscribe = function(subs, ledgerIndex) {
         })
     }
 
-    return this.send(request)
-    .then(function(result) {
-        ['server', 'ledger', 'transactions'].forEach(function(name) {
+    this.send(request, function(err) {
+        if (err) return cb && cb(err)
+
+        var types = ['server', 'ledger', 'transactions']
+
+        types.forEach(function(name) {
             if (!subs[name]) return
             that.subs[name].push(subs[name])
         })
@@ -179,18 +215,18 @@ Drop.prototype.subscribe = function(subs, ledgerIndex) {
             })
         }
 
-        return result
+        cb && cb()
     })
 }
 
-Drop.prototype.account = function(account) {
-    return this.send({
+Drop.prototype.account = function(account, cb) {
+    this.send({
         command: 'account_info',
         ident: account
-    })
+    }, cb)
 }
 
-Drop.prototype.transact = function(tx) {
+Drop.prototype.submit = function(tx, cb) {
     assert(this.opts.secrets[tx.Account])
     assert(tx.TransactionType)
 
@@ -200,60 +236,46 @@ Drop.prototype.transact = function(tx) {
 
     debug('tx_json %s', util.inspect(tx_json, null, 4))
 
-    return this.send({
+    this.send({
         command: 'submit',
         secret: this.opts.secrets[tx.Account],
         tx_json: tx_json
-    })
-    .then(function(result) {
-        if (result.engine_result == 'tesSUCCESS') {
-            return result.tx_json
+    }, function(err, res) {
+        if (err) return cb(err)
+
+        if (res.engine_result == 'tesSUCCESS') {
+            // TODO: Translate to ours
+            return cb(null, res.tx_json.hash, res.tx_json.Sequence)
         }
 
-        var error = new Error(result.engine_result_message)
-        error.name = result.engine_result
-        error.code = result.engine_result_code
-        throw error
+        err = new Error(res.engine_result_message)
+        err.name = res.engine_result
+        err.code = res.engine_result_code
+        throw err
     })
 }
 
-function splitAddress(s) {
-    var m = s.match(/^([^:]+)(?::(\d+))?$/)
-    return {
-        address: m[1],
-        tag: m[2] ? +m[2] : null
-    }
-}
-
-Drop.prototype.amountToJSON = function(amount) {
-    if (amount.currency === 'XRP') {
-        return amount.value * 1e6 + ''
-    }
-
-    return amount
-}
-
-Drop.prototype.payment = function(from, to, amount) {
-    var fromSplit = splitAddress(from)
-    , toSplit = splitAddress(to)
+Drop.prototype.payment = function(from, to, amount, cb) {
+    var fromSplit = convert.splitAddress(from)
+    , toSplit = convert.splitAddress(to)
     , tx = {
         TransactionType: 'Payment',
         Account: fromSplit.address,
-        Amount: this.amountToJSON(amount),
-        Destination: toSplit.address,
+        Amount: convert.toTheirPayment(amount),
+        Destination: toSplit.address
     }
-    if (fromSplit.tag != null) tx.SourceTag = fromSplit.tag
-    if (toSplit.tag != null) tx.DestinationTag = toSplit.tag
-    return this.transact(tx)
+    if (fromSplit.tag !== null) tx.SourceTag = fromSplit.tag
+    if (toSplit.tag !== null) tx.DestinationTag = toSplit.tag
+    this.submit(tx, cb)
 }
 
-Drop.prototype.createOffer = function(account, from, to) {
-    return this.transact({
+Drop.prototype.offer = function(account, from, to, cb) {
+    this.submit({
         TransactionType: 'OfferCreate',
-        TakerGets: this.amountToJSON(from),
-        TakerPays: this.amountToJSON(to),
-        Account: account,
-    })
+        TakerGets: convert.toTheirTakesGets(from),
+        TakerPays: convert.toTheirTakesGets(to),
+        Account: account
+    }, cb)
 }
 
 Drop.prototype.accountLines = function(account) {
@@ -263,33 +285,31 @@ Drop.prototype.accountLines = function(account) {
     }).get('lines')
 }
 
-Drop.prototype.transaction = function(hash) {
-    return this.send({
+Drop.prototype.transaction = function(hash, cb) {
+    // TODO: Translate to our
+    this.send({
         command: 'tx',
         transaction: hash
-    })
+    }, cb)
 }
 
-Drop.prototype.accountTransactions = function(account, min, max) {
-    var msg = {
+Drop.prototype.transactions = function(account, min, max, cb) {
+    var req = {
         command: 'account_tx',
         account: account
     }
 
-    if (arguments.length == 3 && min != max) {
-        msg.ledger_index = -1
-        msg.ledger_min = min
-        msg.ledger_max = max
-    } else if (arguments.length == 2) {
-        msg.ledger_index = min
-    }
+    req.ledger_index_min = min || -1
+    req.ledger_index_max = max || -1
 
-    return this.send(msg).then(function(msg) {
-        return msg.transactions || []
+    this.send(req, function(err, res) {
+        if (err) return cb(err)
+
+        cb(null, res.transactions.map(convert.fromTheirTransaction))
     })
 }
 
-Drop.prototype.subscribeBook = function(from, to, fromIssuer, toIssuer) {
+Drop.prototype.subscribeBook = function(from, to, fromIssuer, toIssuer, cb) {
     var book = {
         CurrencyIn: from,
         CurrencyOut: to
@@ -298,31 +318,38 @@ Drop.prototype.subscribeBook = function(from, to, fromIssuer, toIssuer) {
     if (fromIssuer) book.IssuerIn = fromIssuer
     if (toIssuer) book.IssuerOut = toIssuer
 
-    return this.send({
+    this.send({
         command: 'subscribe',
         books: [book]
-    })
+    }, cb)
 }
 
-Drop.prototype.ledger = function(ledger, full) {
-    return this.send({
+Drop.prototype.ledger = function(ledger, full, cb) {
+    if (cb === undefined) cb = full
+
+    this.send({
         command: 'ledger',
         ledger: ledger,
         full: full || false
-    }).get('ledger')
-}
-
-Drop.prototype.cancelOffer = function(account, seq) {
-    return this.transact({
-        TransactionType: 'OfferCancel',
-        Account: account,
-        OfferSequence: seq
+    }, function(err, res) {
+        cb(err, err ? null : res.ledger)
     })
 }
 
-Drop.prototype.accountOffers = function(account) {
-    return this.send({
+Drop.prototype.cancel = function(account, seq, cb) {
+    this.submit({
+        TransactionType: 'OfferCancel',
+        Account: account,
+        OfferSequence: seq
+    }, cb)
+}
+
+Drop.prototype.offers = function(account, cb) {
+    this.send({
         command: 'account_offers',
         account: account
-    }).get('offers')
+    }, function(err, res) {
+
+        cb(err, err ? null : res.offers.map(convert.fromTheirOffer))
+    })
 }

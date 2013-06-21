@@ -1,7 +1,98 @@
-var Q = require('q')
-, Drop = require('../lib/drop')
+var optimist = require('optimist')
+, command = optimist.argv._[0]
+, Drop = require('..')
 , drop = new Drop()
-console.log(process.argv)
-drop.opts.secrets[process.argv[2]] = process.argv[3]
+, config = require('konfu')
+, _ = require('lodash')
 
-drop.send(require('c:/temp/as.json'))
+var argv = optimist
+.alias('a', 'account')
+.default('a', config.account)
+.alias('s', 'secret')
+.default('s', config.secret)
+.argv
+
+if (argv.account && argv.secret) {
+    drop.opts.secrets[argv.account] = argv.secret
+}
+
+function parseAmount(s) {
+    var m = s.match(/^([0-9\.]+) ([A-Z]{3})(\/r[A-Za-z0-9]+)?/)
+    , res = {
+        amount: m[1],
+        currency: m[2]
+    }
+
+    if (m[3]) {
+        res.issuer = m[3].substr(1)
+    }
+
+    return res
+}
+
+if (command == 'transactions') {
+    var from = argv.f || argv._[1]
+    , to = argv.t || argv._[2]
+
+    drop.transactions(argv.account, from, to, function(err, res) {
+        if (err) throw err
+
+        if (!res.length) console.log('No transactions')
+
+        res.forEach(function(r) {
+            console.log(r)
+        })
+
+        drop.close()
+    })
+} else if (command == 'offers') {
+    drop.offers(argv.account, function(err, res) {
+        if (err) throw err
+
+        if (!res.length) console.log('No offers')
+
+        res.forEach(function(r) {
+            console.log(r)
+        })
+
+        drop.close()
+    })
+} else if (command == 'subscribe') {
+    drop.subscribe(argv.account, function(msg) {
+        console.log(msg)
+    }, function(err) {
+        if (err) throw err
+    })
+} else if (command == 'send') {
+    var amount = parseAmount(argv._[1] + ' ' + argv._[2])
+
+    drop.payment(argv.account, argv._[3], amount, function(err, hash) {
+        if (err) throw err
+        console.log(hash)
+        drop.close()
+    })
+} else if (command == 'offer') {
+    var from = parseAmount(argv._[1] + ' ' + argv._[2])
+    , to = parseAmount(argv._[3] + ' ' + argv._[4])
+
+    drop.offer(argv.account, from, to, function(err, hash, seq) {
+        if (err) throw err
+        console.log(seq)
+        drop.close()
+    })
+} else if (command == 'cancel') {
+    drop.cancel(argv.account, argv._[1], function(err) {
+        if (err) throw err
+        console.log('OK')
+
+        drop.close()
+    })
+} else if (command == 'ping') {
+    drop.ping(function(err, roundtrip) {
+        if (err) throw err
+        console.log('%s ms', roundtrip)
+        drop.close()
+    })
+} else {
+    throw new Error('Unknown command ' + command + '.')
+}

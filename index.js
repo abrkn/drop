@@ -1,4 +1,4 @@
-var _ = require('underscore')
+var _ = require('lodash')
 , WebSocket = require('ws')
 , debug = require('debug')('drop')
 , assert = require('assert')

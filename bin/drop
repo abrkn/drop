@@ -57,6 +57,18 @@ if (command == 'transactions') {
 
         drop.close()
     })
+} else if (command == 'lines') {
+    drop.lines(argv.account, function(err, res) {
+        if (err) throw err
+
+        if (!res.length) console.log('No lines')
+
+        res.forEach(function(r) {
+            console.log(r)
+        })
+
+        drop.close()
+    })
 } else if (command == 'subscribe') {
     drop.subscribe(argv.account, function(msg) {
         console.log(msg)
@@ -91,6 +103,12 @@ if (command == 'transactions') {
     drop.ping(function(err, roundtrip) {
         if (err) throw err
         console.log('%s ms', roundtrip)
+        drop.close()
+    })
+} else if (command == 'ledger') {
+    drop.ledger(function(err, ledger) {
+        if (err) throw err
+        console.log(ledger)
         drop.close()
     })
 } else {

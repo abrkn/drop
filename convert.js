@@ -42,6 +42,7 @@ exports.fromTheirTransaction = function(t) {
         hash: t.hash,
         seq: t.Sequence,
         fee: t.Fee,
+        from: t.Account,
         timestamp: t.date
     }
 
@@ -52,10 +53,16 @@ exports.fromTheirTransaction = function(t) {
     if (t.TransactionType == 'Payment') {
         _.extend(res, exports.fromTheirAmount(t.Amount))
         res.type = 'payment'
+        if (t.SourceTag !== undefined) res.st = t.SourceTag
+        if (t.DestinationTag !== undefined) res.dt = t.DestinationTag
+        res.to = t.Destination
     } else if (t.TransactionType == 'OfferCreate') {
         res.type = 'offer'
         res.have = exports.fromTheirAmount(t.TakerGets)
         res.want = exports.fromTheirAmount(t.TakerPays)
+    } else if (t.TransactionType == 'TrustSet') {
+        res.type = 'set trust'
+        _.extend(res, exports.fromTheirAmount(t.LimitAmount))
     } else {
         throw new Error('Unknown transaction type ' + t.TransactionType)
     }
@@ -87,11 +94,11 @@ exports.toTheirPayment = function(our) {
     }
 
     var res = {
-        Value: our.amount,
-        Currency: our.currency
+        value: removeTrailingZeroes(our.amount),
+        currency: our.currency
     }
 
-    if (our.issuer) res.Issuer = our.issuer
+    if (our.issuer) res.issuer = our.issuer
 
     return res
 }
@@ -109,7 +116,7 @@ exports.toTheirTakesGets = function(our) {
     assert(our.issuer)
 
     var res = {
-        value: our.amount,
+        value: removeTrailingZeroes(our.amount),
         currency: our.currency,
         issuer: our.issuer
     }
@@ -118,7 +125,10 @@ exports.toTheirTakesGets = function(our) {
 }
 
 exports.splitAddress = function(s) {
+    assert(s)
     var m = s.match(/^([^:]+)(?::(\d+))?$/)
+    assert(m)
+
     return {
         address: m[1],
         tag: m[2] ? +m[2] : null

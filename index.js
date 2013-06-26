@@ -256,6 +256,11 @@ Drop.prototype.submit = function(tx, cb) {
 }
 
 Drop.prototype.payment = function(from, to, amount, cb) {
+    assert(from)
+    assert(to)
+    assert(amount)
+    assert(cb)
+
     var fromSplit = convert.splitAddress(from)
     , toSplit = convert.splitAddress(to)
     , tx = {
@@ -266,6 +271,7 @@ Drop.prototype.payment = function(from, to, amount, cb) {
     }
     if (fromSplit.tag !== null) tx.SourceTag = fromSplit.tag
     if (toSplit.tag !== null) tx.DestinationTag = toSplit.tag
+    debug('submitting payment...')
     this.submit(tx, cb)
 }
 
@@ -278,11 +284,13 @@ Drop.prototype.offer = function(account, from, to, cb) {
     }, cb)
 }
 
-Drop.prototype.accountLines = function(account) {
+Drop.prototype.lines = function(account, cb) {
     return this.send({
         command: 'account_lines',
         account: account
-    }).get('lines')
+    }, function(err, res) {
+        cb(err, err ? null : res.lines)
+    })
 }
 
 Drop.prototype.transaction = function(hash, cb) {
@@ -325,14 +333,22 @@ Drop.prototype.subscribeBook = function(from, to, fromIssuer, toIssuer, cb) {
 }
 
 Drop.prototype.ledger = function(ledger, full, cb) {
-    if (cb === undefined) cb = full
+    if (full === undefined) {
+        cb = ledger
+        full = false
+        ledger = 'validated'
+    } else if (cb === undefined) {
+        cb = full
+    }
 
     this.send({
         command: 'ledger',
         ledger: ledger,
         full: full || false
     }, function(err, res) {
-        cb(err, err ? null : res.ledger)
+        cb(err, err ? null : {
+            index: res.ledger.ledger_index
+        })
     })
 }
 

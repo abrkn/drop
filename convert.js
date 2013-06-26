@@ -60,6 +60,10 @@ exports.fromTheirTransaction = function(t) {
         res.type = 'offer'
         res.have = exports.fromTheirAmount(t.TakerGets)
         res.want = exports.fromTheirAmount(t.TakerPays)
+    } else if (t.TransactionType == 'OfferCancel') {
+        res.type = 'cancel offer'
+        res.hash = t.hash
+        res.seq = t.Sequence
     } else if (t.TransactionType == 'TrustSet') {
         res.type = 'set trust'
         _.extend(res, exports.fromTheirAmount(t.LimitAmount))

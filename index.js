@@ -122,7 +122,7 @@ Drop.prototype.onMessage = function(data) {
 }
 
 Drop.prototype.onError = function(err) {
-    console.error('socket error %j', err)
+    console.error('socket error %j', err.message)
     this.emit('error', err)
 }
 

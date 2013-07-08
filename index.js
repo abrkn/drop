@@ -63,7 +63,7 @@ Drop.prototype.onOpen = function() {
 
 Drop.prototype.onClose = function() {
     debug('socket closed')
-    this.emit('closed')
+    this.emit('close')
 }
 
 // TODO: function is too long

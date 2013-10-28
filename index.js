@@ -251,7 +251,7 @@ Drop.prototype.submit = function(tx, cb) {
         err = new Error(res.engine_result_message)
         err.name = res.engine_result
         err.code = res.engine_result_code
-        throw err
+        return cb(err)
     })
 }
 
